@@ -30,7 +30,6 @@ def subcriteria_alternatives_to_tuples(df, all_criteria):
             comparisons[c] = {(row['A'],row['B']):row['Relative importance'] for _, row in s_df}
     return comparisons
 
-
 def calculate_weights(level, comparison_name):
     weights = ahpy.Compare(name=comparison_name, comparisons=level)
     return weights
@@ -59,14 +58,14 @@ if __name__ == '__main__':
 
     criteria.add_children(subcriteria)
 
-    alternatives = []
-    last_subcriteria = subcriteria[0]
-    for i, (k,v) in enumerate(alt_comparisons.items()):
-        current_subcriteria = subcriteria[i]
-        if current_subcriteria != last_subcriteria:
-            last_subcriteria.add_children(alternatives)
-            alternatives = []
-        alternatives.append(calculate_weights(v, k))
-        last_subcriteria = current_subcriteria
+    # alternatives = []
+    # last_subcriteria = subcriteria[0]
+    # for i, (k,v) in enumerate(alt_comparisons.items()):
+    #     current_subcriteria = subcriteria[i]
+    #     if current_subcriteria != last_subcriteria:
+    #         last_subcriteria.add_children(alternatives)
+    #         alternatives = []
+    #     alternatives.append(calculate_weights(v, k))
+    #     last_subcriteria = current_subcriteria
 
     criteria.report(show=True)
