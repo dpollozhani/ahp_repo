@@ -34,7 +34,10 @@ def calculate_weights(level, comparison_name):
     weights = ahpy.Compare(name=comparison_name, comparisons=level)
     return weights
 
-if __name__ == '__main__':
+def generate_tabular_report(criteria, subcriteria, alternatives):
+    pass
+
+def main():
     file_path = 'data/AHP test.xlsx'
     
     overview = load_overview_from_excel(file=file_path, sheet='Overview')
@@ -49,7 +52,7 @@ if __name__ == '__main__':
     sub_comparisons = subcriteria_alternatives_to_tuples(subcriteria_base, all_criteria)
     alt_comparisons = subcriteria_alternatives_to_tuples(alternatives_base, all_subcriteria)
     
-    ### Calculating the weights ###
+    ### Calculating the weights and connecting hierarchy ###
     criteria = calculate_weights(criteria_comparisons, 'Criteria')
     
     subcriteria = []
@@ -58,7 +61,7 @@ if __name__ == '__main__':
 
     criteria.add_children(subcriteria)
    
-    alternatives = []
+    alternatives_tmp, alternatives = [], []
     last_subcriteria_name = all_subcriteria_parents.iloc[0,0]
     subcriteria_model_names = [s.name for s in subcriteria]
     max_iter = len(alt_comparisons.keys())
@@ -68,26 +71,23 @@ if __name__ == '__main__':
         j = subcriteria_model_names.index(last_subcriteria_name)
     
         if subcriteria[i].name != last_subcriteria_name:
-            subcriteria[j].add_children(alternatives)
-            print([x.name for x in alternatives])
-            print("->", subcriteria[j].name) 
-            alternatives=[]
+            subcriteria[j].add_children(alternatives_tmp)
+            #print([x.name for x in alternatives_tmp])
+            #print("->", subcriteria[j].name) 
+            alternatives_tmp=[]
         
         weights = calculate_weights(v, k)
+        alternatives_tmp.append(weights)
         alternatives.append(weights)
         
         if x==max_iter-1:
-            subcriteria[i].add_children(alternatives)
-            #print([x.name for x in alternatives])
+            subcriteria[i].add_children(alternatives_tmp)
+            #print([x.name for x in alternatives_tmp])
             #print("->", subcriteria[j].name) 
       
         last_subcriteria_name = current_subcriteria_name
         
-
-    #subcriteria[3].report(show=True)
-    #alternatives[-3].report(show=True)
-    #for x in range(len(alternatives)):
-    #    r = alternatives[x].report()
-    #    print(r['name'], r['weights']['global'], "\n")
-    
     criteria.report(show=True)
+
+if __name__ == '__main__':
+    main()
