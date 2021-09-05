@@ -39,16 +39,16 @@ if __name__ == '__main__':
     
     overview = load_overview_from_excel(file=file_path, sheet='Overview')
     all_criteria = overview[(overview['Criteria'].str.len()>0) & (overview['Criteria']!='None')]['Criteria'].values
-    #all_subcriteria = overview[overview['Subcriteria'].str.len()>0]['Subcriteria'].values
-    #all_alternatives = overview[overview['Alternatives'].str.len()>0]['Alternatives'].values
+    all_subcriteria = overview[overview['Subcriteria'].str.len()>0]['Subcriteria'].values
+    all_subcriteria_parents = overview[overview['Subcriteria parent'].str.len()>0][['Subcriteria', 'Subcriteria parent']].set_index('Subcriteria')
 
     pairwise = load_pairwise_from_excel(file=file_path, sheet='Comparison')
     criteria_base, subcriteria_base, alternatives_base = split_levels(pairwise, 'Hierarchy level')
     
     criteria_comparisons = criteria_to_tuple(criteria_base)
     sub_comparisons = subcriteria_alternatives_to_tuples(subcriteria_base, all_criteria)
-    #alt_comparisons = subcriteria_alternatives_to_tuples(alternatives_base, all_subcriteria)
-
+    alt_comparisons = subcriteria_alternatives_to_tuples(alternatives_base, all_subcriteria)
+    
     ### Calculating the weights ###
     criteria = calculate_weights(criteria_comparisons, 'Criteria')
     
@@ -57,15 +57,37 @@ if __name__ == '__main__':
         subcriteria.append(calculate_weights(v, k))
 
     criteria.add_children(subcriteria)
+   
+    alternatives = []
+    last_subcriteria_name = all_subcriteria_parents.iloc[0,0]
+    subcriteria_model_names = [s.name for s in subcriteria]
+    max_iter = len(alt_comparisons.keys())
+    for x, (k,v) in enumerate(alt_comparisons.items()):
+        current_subcriteria_name = all_subcriteria_parents.at[k, 'Subcriteria parent']
+        i = subcriteria_model_names.index(current_subcriteria_name)
+        j = subcriteria_model_names.index(last_subcriteria_name)
+    
+        if subcriteria[i].name != last_subcriteria_name:
+            subcriteria[j].add_children(alternatives)
+            print([x.name for x in alternatives])
+            print("->", subcriteria[j].name) 
+            alternatives=[]
+        
+        weights = calculate_weights(v, k)
+        alternatives.append(weights)
+        
+        if x==max_iter-1:
+            subcriteria[i].add_children(alternatives)
+            #print([x.name for x in alternatives])
+            #print("->", subcriteria[j].name) 
+      
+        last_subcriteria_name = current_subcriteria_name
+        
 
-    # alternatives = []
-    # last_subcriteria = subcriteria[0]
-    # for i, (k,v) in enumerate(alt_comparisons.items()):
-    #     current_subcriteria = subcriteria[i]
-    #     if current_subcriteria != last_subcriteria:
-    #         last_subcriteria.add_children(alternatives)
-    #         alternatives = []
-    #     alternatives.append(calculate_weights(v, k))
-    #     last_subcriteria = current_subcriteria
-
+    #subcriteria[3].report(show=True)
+    #alternatives[-3].report(show=True)
+    #for x in range(len(alternatives)):
+    #    r = alternatives[x].report()
+    #    print(r['name'], r['weights']['global'], "\n")
+    
     criteria.report(show=True)
