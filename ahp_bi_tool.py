@@ -31,13 +31,21 @@ def calculate_weights(comparisons, comparison_name):
     weights = ahpy.Compare(name=comparison_name, comparisons=comparisons)
     return weights
 
-def save_report(level, to_path):
+def to_json_file(data, path):
+    if ".json" not in path:
+        path += ".json"
+    with open(path, 'w') as file:
+        json.dump(data, file)
+
+def generate_report(level):
     report = level.report(show=False)
     clean_report = {k:v for k,v in report.items() if k in ['name', 'weights', 'consistency_ratio']}
-    if '.json' not in to_path:
-        to_path += '.json'
-    with open(to_path, 'w') as file:
-        json.dump(clean_report, file)
+    return clean_report
+
+def consistency_ratios_table(report, to_path=None):
+    data = {"name": report["name"], "consistency_ratio" : report["consistency_ratio"]}
+    df = pd.DataFrame.from_dict(data, orient='index').transpose()
+    return df
 
 def main():
     file_path = r'G:\Business Intelligence\BI strategy\AHP.xlsx'
@@ -85,11 +93,24 @@ def main():
         last_parent_name = current_parent_name
 
     file_id = int(datetime.today().timestamp())
-    save_report(criteria, to_path=f'G:\Business Intelligence\BI strategy\AHP reports\Top_level_report_{file_id}')
+    which_reports = input('Which reports to save (A=all, T=top): ')
+    
+    t = generate_report(criteria)
+    consistencies = consistency_ratios_table(t)
+    to_json_file(t, f'G:\Business Intelligence\BI strategy\AHP reports\Top_level_report_{file_id}')
+    
     for s in subcriteria:
-        save_report(s, to_path=f'G:\Business Intelligence\BI strategy\AHP reports\Subcriteria_level_report_{s.name}_{file_id}')
+        u = generate_report(s)
+        consistencies = consistencies.append(consistency_ratios_table(u))
+        if which_reports.upper() == "A":
+            to_json_file(u, f'G:\Business Intelligence\BI strategy\AHP reports\Subcriteria_level_report_{s.name}_{file_id}')
     for a in alternatives:
-        save_report(a, to_path=f'G:\Business Intelligence\BI strategy\AHP reports\Alternatives_level_report_{a.name}_{file_id}')
+        v = generate_report(a)
+        consistencies = consistencies.append(consistency_ratios_table(v))
+        if which_reports.upper() == "A":
+            to_json_file(v, f'G:\Business Intelligence\BI strategy\AHP reports\Alternatives_level_report_{a.name}_{file_id}')
+    
+    consistencies.to_csv(f"G:\Business Intelligence\BI strategy\AHP reports\Consistency_ratios_{file_id}.csv")
 
 if __name__ == '__main__':
     main()
