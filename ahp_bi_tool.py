@@ -58,28 +58,28 @@ def main():
     
     #Alternatives - connecting to subcriteria and - where applicable - top criteria
     parent_models = subcriteria + [criteria]
-    parent_model_names = [s.name for s in subcriteria] + [criteria.name]
+    parent_model_names = [p.name for p in parent_models] 
     alternatives_tmp, alternatives = [], []
     last_parent_name = all_parents.iloc[0,0]
-    max_iter = len(alternatives_comparisons.keys())
+    max_iter = len(alternatives_comparisons.keys())-1
     for x, (k,v) in enumerate(alternatives_comparisons.items()):
         current_parent_name = all_parents.at[k, 'Subcriteria parent']
-        i = parent_model_names.index(current_parent_name)
-        j = parent_model_names.index(last_parent_name)
+        current_parent = parent_model_names.index(current_parent_name)
+        last_parent = parent_model_names.index(last_parent_name)
 
-        if parent_models[i].name != last_parent_name:
-            parent_models[j].add_children(alternatives_tmp)
+        if parent_models[current_parent].name != last_parent_name:
+            parent_models[last_parent].add_children(alternatives_tmp)
             alternatives_tmp=[]
         
         weights = calculate_weights(v, k)
-        alternatives_tmp.append(weights)
-        alternatives.append(weights)
+        alternatives_tmp.append(weights) #used only temporarily for adding children to top/subcriteria
+        alternatives.append(weights) #used for saving all weight data for reporting
         
-        if x==max_iter-1:
-            if current_parent_name!='Criteria':
-                parent_models[i].add_children(alternatives_tmp)
+        if x==max_iter:
+            if current_parent_name != 'Criteria':
+                parent_models[current_parent].add_children(alternatives_tmp)
             else:
-                criteria_children = subcriteria+alternatives_tmp
+                criteria_children = subcriteria+alternatives_tmp #since children can only be added once together, we add everything to top criteria in the end
                 criteria.add_children(criteria_children)
 
         last_parent_name = current_parent_name
